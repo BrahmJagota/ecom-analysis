@@ -1,0 +1,13 @@
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { SalesService } from './sales.service';
+import { CreateSaleDto } from './sales.dto';
+
+@Controller('sales')
+export class SalesController {
+  constructor(private readonly salesService: SalesService) {}
+
+  @Post('create-sale')
+  createSale(@Body() dto: CreateSaleDto ) {
+    return this.salesService.handleSale(dto)
+  }
+}
