@@ -10,4 +10,9 @@ export class SalesController {
   createSale(@Body() dto: CreateSaleDto ) {
     return this.salesService.handleSale(dto)
   }
+
+  @Post('analyze-trend')
+  analyseTrend(@Body() userId: string) {
+    return this.salesService.analyseTrend(userId)
+  }
 }

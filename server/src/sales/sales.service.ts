@@ -50,13 +50,8 @@ export class SalesService {
       });
     }
 
-    const query = `
-      INSERT INTO sales (
-        "userId", "productId", "quantity",
-        "pricePerUnit", amount, category
-      )
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *`;
+    const query = `INSERT INTO sales ("userId", "productId", "quantity", "pricePerUnit", amount, category)
+                   VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
 
     const values = [
       userId,
@@ -71,5 +66,41 @@ export class SalesService {
     return result.rows[0];
   }
 
-  async analyseTrend() {}
+  async analyseTrend(userId: string) {
+    const trendTypes = [
+      { type: 'daily', column: 'day_sales' },
+      { type: 'weekly', column: 'week_sales' },
+      { type: 'monthly', column: 'month_sales' },
+    ];
+    for (const trend of trendTypes) {
+      const column = trend.column;
+
+      const query = `
+      WITH ranked_products AS (
+        SELECT 
+          p.user_id, s.product_id, s.${column},
+          ROW_NUMBER() OVER (
+            PARTITION BY p.user_id 
+            ORDER BY s.${column} DESC
+          ) AS rank
+        FROM product_sales_summary s
+        JOIN products p ON p.product_id = s.product_id
+        WHERE p.user_id = $1
+      )
+      SELECT user_id, product_id 
+      FROM ranked_products 
+      WHERE rank = 1;
+    `;
+
+      const { rows } = await this.db.query(query, [userId]);
+
+      for (const row of rows) {
+        await this.db.query(
+          `INSERT INTO trending_products (user_id, product_id, trend_type)
+   VALUES ($1, $2, $3)`,
+          [row.user_id, row.product_id, trend.type],
+        );
+      }
+    }
+  }
 }
