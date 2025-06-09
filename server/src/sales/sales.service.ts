@@ -103,4 +103,14 @@ export class SalesService {
       }
     }
   }
+
+  async getSales(userId: string) {
+    console.log("userId", userId)
+  const {rows} = await this.db.query(
+     `SELECT * FROM sales WHERE "userId" = $1`,
+    [userId]
+  );
+  return rows; 
+}
+
 }
